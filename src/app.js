@@ -80,7 +80,7 @@ function embedNbApp() {
     loadScript('https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0-alpha1/katex.min.js')
     loadScript(`https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/js/fontawesome.min.js`)
     document.documentElement.setAttribute('style', 'overflow: overlay !important;')
-    document.body.setAttribute('style', 'position: initial !important; margin: 0 325px 0 0 !important;')
+    document.body.setAttribute('style', document.documentElement.hasAttribute('data-nb-textbook') ? 'position: initial !important; margin: 0 !important;' : 'position: initial !important; margin: 0 325px 0 0 !important;')
     let element = document.createElement('div')
     element.id = 'nb-app-wrapper'
     let child = document.createElement('div')
@@ -583,7 +583,7 @@ function embedNbApp() {
                 this.isFetchingMyClassess = true
 
                 try {
-                    const source = window.location.origin + window.location.pathname
+                    const source = window.location.origin + (document.documentElement.getAttribute('data-nb-source-path') || window.location.pathname)
                     const token = localStorage.getItem("nb.user");
                     const config = { headers: { Authorization: 'Bearer ' + token }, params: { url: source } }
                     const myClasses = await axios.get('/api/annotations/myClasses', config)
@@ -781,7 +781,7 @@ function embedNbApp() {
                         this.filter.maxThreads = this.currentConfigs.filterMaxThreadsConfig
                     }
 
-                    let source = window.location.origin + window.location.pathname
+                    let source = window.location.origin + (document.documentElement.getAttribute('data-nb-source-path') || window.location.pathname)
                     if (this.sourceURL.length > 0) {
                         source = this.sourceURL
                     }
