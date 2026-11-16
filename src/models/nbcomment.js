@@ -1,3 +1,4 @@
+import { sourceUrl } from '../utils/source-url.js'
 import htmlToText from 'html-to-text'
 import axios from 'axios'
 import { CommentVisibility, CommentAnonymity } from './enums.js'
@@ -965,7 +966,7 @@ class NbComment {
 
             const headComment = this.getHeadComment(this)
             const spotlightType = headComment.systemSpotlight ? headComment.systemSpotlight.type : headComment.spotlight.type
-            const source = window.location.pathname === '/nb_viewer.html' ? window.location.href : window.location.origin + window.location.pathname
+            const source = sourceUrl()
             const token = localStorage.getItem("nb.user");
             const config = { headers: { Authorization: 'Bearer ' + token }, params: { url: source } }
 

@@ -134,6 +134,7 @@ function createNbRange(range) {
 */
 function deserializeNbRange(json, root = document) {
   let r = {}
+  const exactBook = document.documentElement.hasAttribute('data-nb-textbook')
 
   for (let p of ['start', 'end']) {
     let node
@@ -143,6 +144,7 @@ function deserializeNbRange(json, root = document) {
       console.error(`Error while finding ${p} node: ${json[p]}: ${e}`)
     }
 
+    if (!node && exactBook) throw new Error('Published book anchor unavailable')
     if (!node) {
       console.warn('---- can not find node, will try another way');
       node = DomUtil.getNodeFromRelativeXpath(DomUtil.decreaseXpathAccuracy(json[p]), root)
@@ -178,9 +180,17 @@ function deserializeNbRange(json, root = document) {
     // If we fall off the end of the for loop without having set
     // 'startOffset'/'endOffset', the element has shorter content than when
     // we annotated, so throw an error:
+    if (!r[`${p}Container`] && exactBook) throw new Error('Published book anchor unavailable')
     if (!r[`${p}Container`]) {
       console.error(`Couldn't find offset ${json[p + 'Offset']} in element ${json[p]}`)
     }
+  }
+
+  if (exactBook) {
+    const checked = document.createRange()
+    checked.setStart(r.startContainer, r.startOffset)
+    checked.setEnd(r.endContainer, r.endOffset)
+    if (checked.collapsed || !checked.toString()) throw new Error('Published book anchor unavailable')
   }
 
   // Here's an elegant next step...

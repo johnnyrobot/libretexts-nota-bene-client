@@ -70,6 +70,7 @@
 </template>
 
 <script>
+import { sourceUrl } from '../../utils/source-url.js'
 import { getTextBoundingBoxes } from '../../utils/overlay-util.js'
 import axios from 'axios'
 
@@ -288,7 +289,7 @@ export default {
                 type = this.spotlight.type.toUpperCase()
             }
 
-            const source = window.location.pathname === '/nb_viewer.html' ? window.location.href : window.location.origin + window.location.pathname
+            const source = sourceUrl()
             const token = localStorage.getItem("nb.user");
             const config = { headers: { Authorization: 'Bearer ' + token }, params: { url: source } }
 
@@ -322,7 +323,7 @@ export default {
                     trigger_type = 'REPLY_REQUESTED'
                 }
                 // console.log(trigger_type)
-                const source = window.location.pathname === '/nb_viewer.html' ? window.location.href : window.location.origin + window.location.pathname
+                const source = sourceUrl()
                 const token = localStorage.getItem("nb.user");
                 const config = { headers: { Authorization: 'Bearer ' + token }, params: { url: source } }
 
