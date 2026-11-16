@@ -45,6 +45,7 @@
 </template>
 
 <script>
+import { sourceUrl } from '../../utils/source-url.js'
 
 /**
  * Component for each row per thread on the side bar list.
@@ -159,7 +160,7 @@ export default {
     onClickNotification: function () {
         this.notification.setIsUnseen(false)
         this.$emit('select-notification', this.notification)
-        const source = window.location.pathname === '/nb_viewer.html' ? window.location.href : window.location.origin + window.location.pathname
+        const source = sourceUrl()
         const token = localStorage.getItem("nb.user");
         const config = { headers: { Authorization: 'Bearer ' + token }, params: { url: source } }
 

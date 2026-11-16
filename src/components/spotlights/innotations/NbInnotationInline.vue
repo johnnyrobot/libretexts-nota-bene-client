@@ -2,6 +2,7 @@
 </template>
 
 <script>
+import { sourceUrl } from '../../../utils/source-url.js'
 import axios from 'axios'
 
 export default {
@@ -57,7 +58,7 @@ export default {
             clearTimeout(this.hoverLogTimeout)
             this.$emit('log-nb', 'CLICK', 'SPOTLIGHT', this.thread)
             const spotlightType = this.thread.systemSpotlight ? this.thread.systemSpotlight.type : this.thread.spotlight.type
-            const source = window.location.pathname === '/nb_viewer.html' ? window.location.href : window.location.origin + window.location.pathname
+            const source = sourceUrl()
             const token = localStorage.getItem("nb.user");
             const config = { headers: { Authorization: 'Bearer ' + token }, params: { url: source } }
             

@@ -1,3 +1,4 @@
+import { sourceUrl } from './utils/source-url.js'
 import Vue from 'vue'
 import VueQuill from 'vue-quill'
 import VTooltip from 'v-tooltip'
@@ -583,7 +584,7 @@ function embedNbApp() {
                 this.isFetchingMyClassess = true
 
                 try {
-                    const source = window.location.origin + (document.documentElement.getAttribute('data-nb-source-path') || window.location.pathname)
+                    const source = sourceUrl(false)
                     const token = localStorage.getItem("nb.user");
                     const config = { headers: { Authorization: 'Bearer ' + token }, params: { url: source } }
                     const myClasses = await axios.get('/api/annotations/myClasses', config)
@@ -781,7 +782,7 @@ function embedNbApp() {
                         this.filter.maxThreads = this.currentConfigs.filterMaxThreadsConfig
                     }
 
-                    let source = window.location.origin + (document.documentElement.getAttribute('data-nb-source-path') || window.location.pathname)
+                    let source = sourceUrl(false)
                     if (this.sourceURL.length > 0) {
                         source = this.sourceURL
                     }

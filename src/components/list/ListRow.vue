@@ -84,6 +84,7 @@
 </template>
 
 <script>
+import { sourceUrl } from '../../utils/source-url.js'
 import axios from 'axios'
 
 /**
@@ -165,7 +166,7 @@ export default {
         onClick: function () {
             this.$emit('log-nb', 'CLICK', 'LIST', this.thread)
 
-            const source = window.location.pathname === '/nb_viewer.html' ? window.location.href : window.location.origin + window.location.pathname
+            const source = sourceUrl()
             const token = localStorage.getItem("nb.user");
             const config = { headers: { Authorization: 'Bearer ' + token }, params: { url: source } }
 
