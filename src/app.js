@@ -1,4 +1,4 @@
-import { sourceUrl } from './utils/source-url.js'
+import { sourceUrl, bookReaderActive } from './utils/source-url.js'
 import Vue from 'vue'
 import VueQuill from 'vue-quill'
 import VTooltip from 'v-tooltip'
@@ -896,6 +896,10 @@ function embedNbApp() {
                 try {
                     item.range = deserializeNbRange(item.range)
                 } catch (e) {
+                    if (document.documentElement.hasAttribute('data-nb-textbook')) {
+                        document.dispatchEvent(new Event('nb-anchor-unavailable'))
+                        return
+                    }
                     console.warn(`Could not deserialize range for ${item.id}`)
                 }
                 if (oldHeadAnnotationId) { // if there exists an old thread we need to remove, then filter it out before adding a new one
@@ -1067,6 +1071,7 @@ function embedNbApp() {
                         try {
                             item.range = deserializeNbRange(item.range)
                         } catch (e) {
+                            if (document.documentElement.hasAttribute('data-nb-textbook')) document.dispatchEvent(new Event('nb-anchor-unavailable'))
                             console.warn(`Could not deserialize range for ${item.id}`)
                             continue
                         }
@@ -1390,6 +1395,7 @@ function embedNbApp() {
                 this.showSpotlights = show
             },
             handleRedrawHighlights: function () {
+                if (bookReaderActive()) return
                 //console.log('handleRedrawHighlights');
                 // if (this.canRedrawHighlightsTimeout) {
                 //     clearTimeout(this.canRedrawHighlightsTimeout)
@@ -1690,6 +1696,7 @@ function embedNbApp() {
     })
 
     document.body.addEventListener('mouseup', _ => {
+        if (bookReaderActive()) return
         let selection = window.getSelection()
         if (selection.isCollapsed) { return }
 
@@ -1706,6 +1713,7 @@ function embedNbApp() {
     })
 
     document.body.addEventListener('touchend', _ => {
+        if (bookReaderActive()) return
         let selection = window.getSelection()
         if (selection.isCollapsed) { return }
 
@@ -1722,6 +1730,7 @@ function embedNbApp() {
     })
 
     document.addEventListener('keyup', e => {
+        if (bookReaderActive()) return
         switch (e.key) {
             case "Escape":
                 app.onUnselectThread()
