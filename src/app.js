@@ -1134,6 +1134,10 @@ function embedNbApp() {
                 })
             },
             draftThread: function (range) {
+                if (document.documentElement.hasAttribute('data-nb-textbook')) {
+                    const main = document.querySelector('#main-content')
+                    if (bookReaderActive() || !main || !main.contains(range.startContainer) || !main.contains(range.endContainer) || !range.toString().trim()) return
+                }
                 this.draftRange = null
                 if (this.user) { // only if selection was after user log in
                     if (this.threadSelected) {
