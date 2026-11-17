@@ -1040,6 +1040,7 @@ function embedNbApp() {
                 }
             },
             newOfflineNotification: function (comment) {
+                if (!this.user) return null
                 // if (this.notificationThreads.length < 5) { // limit to 5 initial notifications
                 let taggedComment = comment.getUserTagPost(this.user.id)
                 if (taggedComment !== null) {
@@ -1064,12 +1065,15 @@ function embedNbApp() {
                 return null
             },
             getAllAnnotations: async function (source, newActiveClass) {
+                const activeUser = this.user
+                if (!activeUser || !newActiveClass.id) return
                 this.stillGatheringThreads = true
                 const token = localStorage.getItem("nb.user");
                 const headers = { Authorization: 'Bearer ' + token }
                 const config = { headers, params: { url: source, class: newActiveClass.id, sectioned: !this.currentConfigs.isIgnoreSectionsInClass } }
 
                 axios.get('/api/annotations/annotation', config).then(async res => {
+                    if (this.user !== activeUser || this.activeClass !== newActiveClass) return
 
                     for (const item of res.data.headAnnotations) {
 

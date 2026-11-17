@@ -7,7 +7,8 @@ const fs=require('node:fs');const path=require('node:path');const assert=require
  const settings=JSON.parse(fs.readFileSync(path.join(state,'settings.json'))), fixture=JSON.parse(fs.readFileSync(path.join(state,'fixture.json')));
  const browser=await chromium.launch();const context=await browser.newContext({ignoreHTTPSErrors:true,extraHTTPHeaders:{Accept:'application/json'}});
  await context.route('**/*',r=>new URL(r.request().url()).hostname==='127.0.0.1'?r.continue():r.abort());
- const page=await context.newPage();page.setDefaultTimeout(12000);const errors=[];
+ let releaseResponse, responseArrived; const held=new Promise(r=>releaseResponse=r), arrived=new Promise(r=>responseArrived=r);let holdFirst=true;
+ const page=await context.newPage();await page.route('**/api/annotations/annotation?*',async r=>{if(holdFirst){holdFirst=false;responseArrived();await held;}await r.continue();});page.setDefaultTimeout(12000);const errors=[];
  const socketRequests=[];page.on('request',r=>{if(r.url().includes('/socket.io'))socketRequests.push(r.url());});
  page.on('pageerror',e=>errors.push(e.stack||e.message));
  page.on('console',async msg=>{if(msg.type()==='error')for(const arg of msg.args()){try{const e=await arg.evaluate(x=>x instanceof Error?x.stack:String(x));errors.push(e);}catch{}}});
@@ -24,7 +25,7 @@ const fs=require('node:fs');const path=require('node:path');const assert=require
  await page.getByRole('button',{name:'Switch account',exact:true}).waitFor();
  await page.locator('summary').filter({hasText:'Choose a passage with the keyboard'}).click();
  assert(!await page.locator('.nb-book-status').innerText().then(t=>t.includes('Sign in')));
- await page.getByRole('button',{name:'Switch account',exact:true}).click();
+ await arrived;await page.getByRole('button',{name:'Switch account',exact:true}).click();releaseResponse();await page.waitForTimeout(250);
  await page.getByLabel('Username:').fill(settings.users[1].username);await page.getByLabel('Password:').fill(settings.users[1].password);await page.locator('form.login-form button').click();
  await page.getByRole('button',{name:'Switch account',exact:true}).waitFor();
  assert.equal(await page.evaluate(()=>JSON.parse(atob(localStorage.getItem('nb.user').split('.')[1])).user.username),settings.users[1].username);
@@ -56,6 +57,6 @@ const fs=require('node:fs');const path=require('node:path');const assert=require
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
  assert.equal(await page.evaluate(()=>{const m=document.querySelector('#main-content').getBoundingClientRect();return [...document.querySelectorAll('#main-content a')].some(a=>a.getBoundingClientRect().right>m.right+1);}),false);
  }
- assert.equal(errors.filter(e=>/querySelectorAll|reading 'username'|reading 'toUpperCase'/.test(e)).length,0,JSON.stringify(errors));assert.equal(socketRequests.length,0,'disabled socket must not connect');
+ assert.equal(errors.length,0,JSON.stringify(errors));assert.equal(socketRequests.length,0,'disabled socket must not connect');
  }finally{fs.writeFileSync(path.join(out,'errors.json'),JSON.stringify(errors,null,2));await browser.close();}
 })();
