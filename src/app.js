@@ -1,6 +1,6 @@
 import { sourceUrl, bookReaderActive } from './utils/source-url.js'
 import Vue from 'vue'
-import VueQuill from 'vue-quill'
+import VueQuill from './vendor/vue-quill/vue-quill.js'
 import VTooltip from 'v-tooltip'
 import Notifications from 'vue-notification'
 import VueSweetalert2 from 'vue-sweetalert2';
