@@ -37,7 +37,7 @@ Vue.use(Notifications)
 Vue.use(VueSweetalert2);
 Vue.component('font-awesome-icon', FontAwesomeIcon)
 library.add(fas, far, faChevronDown, faChevronUp, faUserCheck, faUserPlus, faCheckSquare)
-const socket = io(currentEnv.baseURL, { reconnect: true })
+const socket = io(currentEnv.baseURL, { reconnect: true, autoConnect: false })
 axios.defaults.baseURL = `${currentEnv.baseURL}/`
 export const PLUGIN_HOST_URL = currentEnv.pluginURL
 export const BASE_HOST_URL = currentEnv.baseURL
@@ -578,6 +578,10 @@ function embedNbApp() {
                 deep: true
             },
             user: async function (newUser, oldUser) {
+                // Signal real sign-in state to publisher scripts outside the Vue app (e.g. book.js),
+                // mirroring the existing data-tts-reader pattern they already observe.
+                document.documentElement.dataset.nbSignedIn = newUser ? 'true' : 'false'
+
                 if (!newUser) return // logged out
                 if (newUser === oldUser) return // same user, do nothing
 
@@ -715,7 +719,8 @@ function embedNbApp() {
                         }
                     }
 
-                    if (this.syncConfig) {
+                    if (this.syncConfig && !document.documentElement.hasAttribute('data-nb-textbook')) {
+                        socket.connect()
                         socket.on('connections', (data) => {
                             console.log(`NB: Socket.IO connections`)
                             let isInitConnection = this.onlineUsers.ids.length === 0
@@ -732,14 +737,16 @@ function embedNbApp() {
                                 await socket.connect();
                             }
                             setTimeout(() => {
+                                if (!this.user) return
                                 socket.emit('joined', { id: this.user.id, username: this.user.username, classId: this.activeClass.id, sectionId: this.currentSectionId, sourceURL: this.sourceURL, role: this.user.role })
                             }, 1000);
-            
+
                         })
-            
+
                         socket.on("connect_error", () => {
                             console.log('NB: Socket.IO connect_error')
                             setTimeout(() => {
+                                if (!this.user) return
                                 socket.emit('joined', { id: this.user.id, username: this.user.username, classId: this.activeClass.id, sectionId: this.currentSectionId, sourceURL: this.sourceURL, role: this.user.role })
                             }, 1000);
                         });
@@ -876,6 +883,7 @@ function embedNbApp() {
                 this.user = user
             },
             onUserLeft: function () {
+                if (!socket.connected || !this.user || !this.activeClass.id) return
                 socket.emit('left', { username: this.user.username, classId: this.activeClass.id, sectionId: this.currentSectionId, sourceURL: this.sourceURL })
             },
             iFollowThisUser: function(comment) {
@@ -1495,7 +1503,7 @@ function embedNbApp() {
                 }
             },
             onSessionEnd: async function () {
-                if (this.activeClass.id) {
+                if (this.activeClass.id && this.user && this.user.role) {
                     this.onLogNb('SESSION_END')
 
                     const token = localStorage.getItem("nb.user");
@@ -1509,7 +1517,7 @@ function embedNbApp() {
                 }
             },
             onLogout: async function () {
-                await this.onSessionEnd()
+                try { await this.onSessionEnd() } catch (error) { console.warn('NB session log unavailable') }
                 this.onUserLeft()
                 localStorage.removeItem("nb.user")
                 this.resetNB()

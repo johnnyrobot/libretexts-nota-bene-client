@@ -1,11 +1,11 @@
 <template>
     <div class="list-view">
-        <header class="card-header" v-tooltip="tooltipType" @click="isCollapsed = !isCollapsed">
+        <header class="card-header" v-tooltip="tooltipType">
             <p class="card-header-title">{{title}}</p>
-            <a class="button card-header-icon collapse-button">
+            <button type="button" class="button card-header-icon collapse-button" :aria-label="isCollapsed ? 'Expand discussion list' : 'Collapse discussion list'" :aria-expanded="!isCollapsed" @click="isCollapsed = !isCollapsed">
                 <font-awesome-icon icon="chevron-up" v-if="!isCollapsed"/>
                 <font-awesome-icon icon="chevron-down" v-if="isCollapsed"/>
-            </a>
+            </button>
         </header>
         <div v-if="!isCollapsed">
             <div class="list-control">

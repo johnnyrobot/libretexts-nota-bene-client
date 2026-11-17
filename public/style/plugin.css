@@ -1801,3 +1801,13 @@ html[data-nb-textbook] main .ch-card .ico { max-width: 100%; }
 }
 /* Reader controls must keep Exit reachable on narrow published-book pages. */
 html[data-nb-textbook] .tts-bar { flex-wrap: wrap; }
+
+/* Native textbook discussion panel: retain its layout, improve reading and controls. */
+html[data-nb-textbook] #nb-sidebar .nb-nav-bar { position:relative; height:auto; box-sizing:border-box; background:#174b68; color:#fff; padding:12px; flex-wrap:wrap; gap:8px; }
+html[data-nb-textbook] #nb-sidebar .nb-switch-account { background:#fff; color:#174b68; padding:8px; min-height:44px; border:1px solid #174b68; cursor:pointer; }
+html[data-nb-textbook] #nb-sidebar .card-header { background:#edf3f6; color:#153b50; padding:8px 12px; }
+html[data-nb-textbook] #nb-sidebar .collapse-button { min-width:44px; min-height:44px; cursor:pointer; }
+html[data-nb-textbook] #nb-sidebar input { padding:8px; box-sizing:border-box; max-width:100%; }
+html[data-nb-textbook] #nb-sidebar button:focus-visible { outline:3px solid #16709b; outline-offset:2px; }
+
+html[data-nb-textbook] #nb-sidebar .filter-view { margin-top:12px; }
