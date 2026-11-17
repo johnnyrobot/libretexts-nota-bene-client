@@ -23,7 +23,7 @@ const fs=require('node:fs');const path=require('node:path');const assert=require
  await page.getByLabel('Username:').fill(settings.users[0].username);await page.getByLabel('Password:').fill(settings.users[0].password);await page.locator('form.login-form button').click();
  await page.getByRole('button',{name:'Switch account',exact:true}).waitFor();
  await page.locator('summary').filter({hasText:'Choose a passage with the keyboard'}).click();
- assert(!await page.locator('.nb-book-controls [role=status]').innerText().then(t=>t.includes('Sign in')));
+ assert(!await page.locator('.nb-book-status').innerText().then(t=>t.includes('Sign in')));
  await page.getByRole('button',{name:'Switch account',exact:true}).click();
  await page.getByLabel('Username:').fill(settings.users[1].username);await page.getByLabel('Password:').fill(settings.users[1].password);await page.locator('form.login-form button').click();
  await page.getByRole('button',{name:'Switch account',exact:true}).waitFor();
