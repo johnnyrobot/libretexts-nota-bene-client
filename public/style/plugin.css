@@ -1781,3 +1781,21 @@ div.trigger span {
     padding: 1.3rem;                                                  
   }
 }
+/* Published books reserve room for NB. Size chapter columns from that room,
+   rather than the snapshot's fixed 598px tracks. No content/anchor DOM changes. */
+html[data-nb-textbook] main .mt-topic-hierarchy-listings.mt-guide-listings {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+html[data-nb-textbook] main .ch-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+html[data-nb-textbook] main .mt-topic-hierarchy-listings > *,
+html[data-nb-textbook] main .ch-grid > * {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+html[data-nb-textbook] main .ch-card .ico { max-width: 100%; }
+@media (max-width: 1100px) {
+  html[data-nb-textbook] main .mt-topic-hierarchy-listings.mt-guide-listings,
+  html[data-nb-textbook] main .ch-grid { grid-template-columns: minmax(0, 1fr) !important; }
+}
