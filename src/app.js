@@ -592,6 +592,7 @@ function embedNbApp() {
                     const token = localStorage.getItem("nb.user");
                     const config = { headers: { Authorization: 'Bearer ' + token }, params: { url: source } }
                     const myClasses = await axios.get('/api/annotations/myClasses', config)
+                    if (this.user !== newUser) return
     
                     axios.get(`/api/follow/user`, {headers: { Authorization: 'Bearer ' + token }}).then((res) => {
                         this.myfollowing = res.data
@@ -607,6 +608,7 @@ function embedNbApp() {
                         const sourceWithQuery = window.location.href // try the source with query params as well
                         const configWithQuery = { headers: { Authorization: 'Bearer ' + token }, params: { url: sourceWithQuery } }
                         const myClassesWithQuery = await axios.get('/api/annotations/myClasses', configWithQuery)
+                        if (this.user !== newUser) return
                         if (myClassesWithQuery.data.length > 0) {
                             this.myClasses = myClassesWithQuery.data
                             if (this.myClasses.length === 1) {
@@ -623,11 +625,14 @@ function embedNbApp() {
                 this.isFetchingMyClassess = false
             },
             activeClass: async function (newActiveClass, oldActiveClass) {
-                if (newActiveClass != {} && this.user) {
+                if (newActiveClass.id && this.user) {
+                    const activeUser = this.user
+                    const stillActive = () => this.user === activeUser && this.activeClass === newActiveClass
                     this.resetNB()
                     const token = localStorage.getItem("nb.user");
                     const NbConfigReqconfig = { headers: { Authorization: 'Bearer ' + token }, params: { course: newActiveClass.id } }
                     const req = await axios.get('/api/nb/config', NbConfigReqconfig)
+                    if (!stillActive()) return
                     const configs = req.data
                     this.nbConfigs = configs
 
@@ -797,6 +802,7 @@ function embedNbApp() {
                     const config = { headers: { Authorization: 'Bearer ' + token }, params: { url: source, class: newActiveClass.id } }
 
                     axios.get('/api/annotations/allUsers', config).then(res => {
+                        if (!stillActive() || !res.data[activeUser.id]) return
                         this.users = res.data
                         this.$set(this.user, 'role', this.users[this.user.id].role)
 
@@ -810,6 +816,7 @@ function embedNbApp() {
                         }
 
                         axios.get('/api/annotations/myCurrentSection', config).then(res => {
+                            if (!stillActive()) return
                             socket.emit('left', { id: this.user.id, username: this.user.username, classId: oldActiveClass.id, sectionId: this.currentSectionId, sourceURL: this.sourceURL, role: this.user.role })
                             this.currentSectionId = res.data
                             socket.emit('joined', { id: this.user.id, username: this.user.username, classId: newActiveClass.id, sectionId: this.currentSectionId, sourceURL: this.sourceURL, role: this.user.role })
@@ -825,6 +832,7 @@ function embedNbApp() {
                     })
 
                     axios.get('/api/annotations/allTagTypes', config).then(res => {
+                        if (!stillActive()) return
                         this.hashtags = res.data
                     })
 

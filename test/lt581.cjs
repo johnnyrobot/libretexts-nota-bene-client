@@ -27,6 +27,7 @@ const fs=require('node:fs');const path=require('node:path');const assert=require
  await page.getByRole('button',{name:'Switch account',exact:true}).click();
  await page.getByLabel('Username:').fill(settings.users[1].username);await page.getByLabel('Password:').fill(settings.users[1].password);await page.locator('form.login-form button').click();
  await page.getByRole('button',{name:'Switch account',exact:true}).waitFor();
+ assert.equal(await page.evaluate(()=>JSON.parse(atob(localStorage.getItem('nb.user').split('.')[1])).user.username),settings.users[1].username);
  try{
  for(const width of [1280,1440,390]){
  await page.setViewportSize({width,height:720});await page.goto(origin+index);await page.locator('#nb-sidebar').waitFor();
@@ -40,8 +41,8 @@ const fs=require('node:fs');const path=require('node:path');const assert=require
  await page.locator('#main-content a[href*="/13.01:"]').first().click();assert(page.url().includes('/13.01:'));await page.goBack();
  await page.locator('#main-content a[href*="/13.01:"]').first().click();
  const search=page.locator('#nb-sidebar .search .ql-editor');await search.fill('cooperation');await search.fill('');
- await page.locator('summary').filter({hasText:'Choose a passage with the keyboard'}).click();
- await page.getByLabel('Choose a passage to discuss').selectOption({index:1});await page.getByRole('button',{name:'Discuss selected passage',exact:true}).click();
+ await page.locator('summary').filter({hasText:'Choose a passage with the keyboard'}).focus();await page.keyboard.press('Enter');
+ await page.getByLabel('Choose a passage to discuss').focus();await page.keyboard.press('Home');await page.keyboard.press('Tab');await page.keyboard.press('Enter');
  await page.locator('.editor-view .ql-editor').fill('navigation draft only');await page.locator('.editor-view button.cancel').click();
  await page.evaluate(()=>{for(const k of Object.keys(localStorage))if(k!=='nb.user')localStorage.removeItem(k);});
  await page.locator('#tts-enter').click();
