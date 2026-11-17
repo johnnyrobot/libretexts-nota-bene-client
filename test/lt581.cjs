@@ -25,7 +25,7 @@ const fs=require('node:fs');const path=require('node:path');const assert=require
  await page.getByRole('button',{name:'Switch account',exact:true}).waitFor();
  await page.locator('summary').filter({hasText:'Choose a passage with the keyboard'}).click();
  assert(!await page.locator('.nb-book-status').innerText().then(t=>t.includes('Sign in')));
- await arrived;await page.getByRole('button',{name:'Switch account',exact:true}).click();releaseResponse();await page.waitForTimeout(250);
+ await arrived;await page.getByRole('button',{name:'Switch account',exact:true}).click();await page.getByLabel('Username:').waitFor({state:'visible'});const completed=page.waitForResponse(r=>r.url().includes('/api/annotations/annotation?'));releaseResponse();await (await completed).finished();await page.waitForTimeout(250);
  await page.getByLabel('Username:').fill(settings.users[1].username);await page.getByLabel('Password:').fill(settings.users[1].password);await page.locator('form.login-form button').click();
  await page.getByRole('button',{name:'Switch account',exact:true}).waitFor();
  assert.equal(await page.evaluate(()=>JSON.parse(atob(localStorage.getItem('nb.user').split('.')[1])).user.username),settings.users[1].username);
