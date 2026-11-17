@@ -1799,3 +1799,5 @@ html[data-nb-textbook] main .ch-card .ico { max-width: 100%; }
   html[data-nb-textbook] main .mt-topic-hierarchy-listings.mt-guide-listings,
   html[data-nb-textbook] main .ch-grid { grid-template-columns: minmax(0, 1fr) !important; }
 }
+/* Reader controls must keep Exit reachable on narrow published-book pages. */
+html[data-nb-textbook] .tts-bar { flex-wrap: wrap; }
