@@ -37,7 +37,7 @@ Vue.use(Notifications)
 Vue.use(VueSweetalert2);
 Vue.component('font-awesome-icon', FontAwesomeIcon)
 library.add(fas, far, faChevronDown, faChevronUp, faUserCheck, faUserPlus, faCheckSquare)
-const socket = io(currentEnv.baseURL, { reconnect: true })
+const socket = io(currentEnv.baseURL, { reconnect: true, autoConnect: false })
 axios.defaults.baseURL = `${currentEnv.baseURL}/`
 export const PLUGIN_HOST_URL = currentEnv.pluginURL
 export const BASE_HOST_URL = currentEnv.baseURL
@@ -578,6 +578,10 @@ function embedNbApp() {
                 deep: true
             },
             user: async function (newUser, oldUser) {
+                // Signal real sign-in state to publisher scripts outside the Vue app (e.g. book.js),
+                // mirroring the existing data-tts-reader pattern they already observe.
+                document.documentElement.dataset.nbSignedIn = newUser ? 'true' : 'false'
+
                 if (!newUser) return // logged out
                 if (newUser === oldUser) return // same user, do nothing
 
@@ -588,6 +592,7 @@ function embedNbApp() {
                     const token = localStorage.getItem("nb.user");
                     const config = { headers: { Authorization: 'Bearer ' + token }, params: { url: source } }
                     const myClasses = await axios.get('/api/annotations/myClasses', config)
+                    if (this.user !== newUser) return
     
                     axios.get(`/api/follow/user`, {headers: { Authorization: 'Bearer ' + token }}).then((res) => {
                         this.myfollowing = res.data
@@ -603,6 +608,7 @@ function embedNbApp() {
                         const sourceWithQuery = window.location.href // try the source with query params as well
                         const configWithQuery = { headers: { Authorization: 'Bearer ' + token }, params: { url: sourceWithQuery } }
                         const myClassesWithQuery = await axios.get('/api/annotations/myClasses', configWithQuery)
+                        if (this.user !== newUser) return
                         if (myClassesWithQuery.data.length > 0) {
                             this.myClasses = myClassesWithQuery.data
                             if (this.myClasses.length === 1) {
@@ -619,11 +625,14 @@ function embedNbApp() {
                 this.isFetchingMyClassess = false
             },
             activeClass: async function (newActiveClass, oldActiveClass) {
-                if (newActiveClass != {} && this.user) {
+                if (newActiveClass.id && this.user) {
+                    const activeUser = this.user
+                    const stillActive = () => this.user === activeUser && this.activeClass === newActiveClass
                     this.resetNB()
                     const token = localStorage.getItem("nb.user");
                     const NbConfigReqconfig = { headers: { Authorization: 'Bearer ' + token }, params: { course: newActiveClass.id } }
                     const req = await axios.get('/api/nb/config', NbConfigReqconfig)
+                    if (!stillActive()) return
                     const configs = req.data
                     this.nbConfigs = configs
 
@@ -715,7 +724,8 @@ function embedNbApp() {
                         }
                     }
 
-                    if (this.syncConfig) {
+                    if (this.syncConfig && !document.documentElement.hasAttribute('data-nb-textbook')) {
+                        socket.connect()
                         socket.on('connections', (data) => {
                             console.log(`NB: Socket.IO connections`)
                             let isInitConnection = this.onlineUsers.ids.length === 0
@@ -732,14 +742,16 @@ function embedNbApp() {
                                 await socket.connect();
                             }
                             setTimeout(() => {
+                                if (!this.user) return
                                 socket.emit('joined', { id: this.user.id, username: this.user.username, classId: this.activeClass.id, sectionId: this.currentSectionId, sourceURL: this.sourceURL, role: this.user.role })
                             }, 1000);
-            
+
                         })
-            
+
                         socket.on("connect_error", () => {
                             console.log('NB: Socket.IO connect_error')
                             setTimeout(() => {
+                                if (!this.user) return
                                 socket.emit('joined', { id: this.user.id, username: this.user.username, classId: this.activeClass.id, sectionId: this.currentSectionId, sourceURL: this.sourceURL, role: this.user.role })
                             }, 1000);
                         });
@@ -790,6 +802,7 @@ function embedNbApp() {
                     const config = { headers: { Authorization: 'Bearer ' + token }, params: { url: source, class: newActiveClass.id } }
 
                     axios.get('/api/annotations/allUsers', config).then(res => {
+                        if (!stillActive() || !res.data[activeUser.id]) return
                         this.users = res.data
                         this.$set(this.user, 'role', this.users[this.user.id].role)
 
@@ -803,6 +816,7 @@ function embedNbApp() {
                         }
 
                         axios.get('/api/annotations/myCurrentSection', config).then(res => {
+                            if (!stillActive()) return
                             socket.emit('left', { id: this.user.id, username: this.user.username, classId: oldActiveClass.id, sectionId: this.currentSectionId, sourceURL: this.sourceURL, role: this.user.role })
                             this.currentSectionId = res.data
                             socket.emit('joined', { id: this.user.id, username: this.user.username, classId: newActiveClass.id, sectionId: this.currentSectionId, sourceURL: this.sourceURL, role: this.user.role })
@@ -818,6 +832,7 @@ function embedNbApp() {
                     })
 
                     axios.get('/api/annotations/allTagTypes', config).then(res => {
+                        if (!stillActive()) return
                         this.hashtags = res.data
                     })
 
@@ -876,6 +891,7 @@ function embedNbApp() {
                 this.user = user
             },
             onUserLeft: function () {
+                if (!socket.connected || !this.user || !this.activeClass.id) return
                 socket.emit('left', { username: this.user.username, classId: this.activeClass.id, sectionId: this.currentSectionId, sourceURL: this.sourceURL })
             },
             iFollowThisUser: function(comment) {
@@ -1024,6 +1040,7 @@ function embedNbApp() {
                 }
             },
             newOfflineNotification: function (comment) {
+                if (!this.user) return null
                 // if (this.notificationThreads.length < 5) { // limit to 5 initial notifications
                 let taggedComment = comment.getUserTagPost(this.user.id)
                 if (taggedComment !== null) {
@@ -1048,12 +1065,15 @@ function embedNbApp() {
                 return null
             },
             getAllAnnotations: async function (source, newActiveClass) {
+                const activeUser = this.user
+                if (!activeUser || !newActiveClass.id) return
                 this.stillGatheringThreads = true
                 const token = localStorage.getItem("nb.user");
                 const headers = { Authorization: 'Bearer ' + token }
                 const config = { headers, params: { url: source, class: newActiveClass.id, sectioned: !this.currentConfigs.isIgnoreSectionsInClass } }
 
                 axios.get('/api/annotations/annotation', config).then(async res => {
+                    if (this.user !== activeUser || this.activeClass !== newActiveClass) return
 
                     for (const item of res.data.headAnnotations) {
 
@@ -1495,7 +1515,7 @@ function embedNbApp() {
                 }
             },
             onSessionEnd: async function () {
-                if (this.activeClass.id) {
+                if (this.activeClass.id && this.user && this.user.role) {
                     this.onLogNb('SESSION_END')
 
                     const token = localStorage.getItem("nb.user");
@@ -1509,7 +1529,7 @@ function embedNbApp() {
                 }
             },
             onLogout: async function () {
-                await this.onSessionEnd()
+                try { await this.onSessionEnd() } catch (error) { console.warn('NB session log unavailable') }
                 this.onUserLeft()
                 localStorage.removeItem("nb.user")
                 this.resetNB()
